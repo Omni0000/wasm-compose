@@ -1,6 +1,7 @@
 use wasmtime::component::ResourceTable ;
 use wasmtime_wasi::{ WasiCtx, WasiCtxView, WasiView };
 
+use crate::ExportsContext;
 use super::RawPluginData ;
 
 
@@ -9,6 +10,7 @@ pub struct PluginContext {
     pub(super) data: RawPluginData,
     pub(super) wasi_ctx: WasiCtx,
     pub(super) wasi_table: ResourceTable,
+    pub exports_context: ExportsContext,
 }
 
 impl PluginContext {
@@ -17,6 +19,7 @@ impl PluginContext {
             data,
             wasi_ctx: WasiCtx::builder().build(),
             wasi_table: ResourceTable::new(),
+            exports_context: ExportsContext::default(),
         }
     }
 }

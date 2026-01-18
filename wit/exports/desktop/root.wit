@@ -1,0 +1,16 @@
+package omni:desktop;
+
+interface controls {
+	resource ui {
+		constructor();
+	}
+	resource window {
+		constructor( ui: ui );
+	}
+}
+
+world desktop {
+	
+	import controls ;
+
+}

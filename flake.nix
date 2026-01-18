@@ -16,12 +16,30 @@
 			in {
 				devShells.default = pkgs.mkShell {
 					buildInputs = with pkgs; [
+
+						# rust
 						rust-bin.stable.latest.default
 						lld
 						pkg-config
 						clang
+
+						# capnproto
 						capnproto
+
+						# libui
+						llvmPackages.libclang
+						cmake
+						gtk3
+						glib
+						cairo
+						pango
+						gdk-pixbuf
+						atk
+
 					];
+					shellHook = ''
+						export LIBCLANG_PATH="${pkgs.llvmPackages.libclang.lib}/lib"
+					'';
 				};
 			}
 		);

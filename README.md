@@ -28,7 +28,12 @@ nix develop
 Running this project will require installing the following:
 
 - [Rust toolchain](https://www.rust-lang.org/learn/get-started/)
-- [Cap'n Proto](https://capnproto.org/install.html).
+- [Cap'n Proto](https://capnproto.org/install.html)
+- CMake (for building libui)
+- libclang (for Rust bindings generation)
+- GTK3 and dependencies (on Linux): gtk3, glib, cairo, pango, gdk-pixbuf, atk
+
+**Note:** Due to the complexity of system dependencies, using Nix is strongly recommended.
 
 ## Technical Details
 

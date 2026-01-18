@@ -3,6 +3,8 @@ use thiserror::Error ;
 use wasmtime::Engine ;
 use pipe_trait::Pipe ;
 
+use crate::default_linker ;
+
 mod discovery ;
 mod loading ;
 mod types ;
@@ -35,7 +37,7 @@ pub fn initialise_plugin_tree( source: &Path, root_interface_id: &InterfaceId ) 
     let ( socket_map, discovery_errors ) = discover_all( source, root_interface_id ).map_err(| err | ( err.into(), vec![] ))?;
 
     let engine = Engine::default();
-    let ( linker, linker_errors ) = crate::exports::exports( &engine );
+    let ( linker, linker_errors ) = default_linker( &engine );
 
     let ( preload_result, preload_errors ) = PluginTree::new( *root_interface_id, socket_map, engine, &linker )
         .pipe( deconstruct_partial_result );

@@ -18,9 +18,12 @@ pipe-trait = "0.4.0"
 regex = "1.12.2"
 toml = "0.8"
 serde = { version = "1.0", features = ["derive"] }
+libui = { git = "https://github.com/libui-rs/libui" }
 
 [build-dependencies]
 capnpc = "0.20"
 
 [features]
+default = ["desktop"]
 test = []
+desktop = []
