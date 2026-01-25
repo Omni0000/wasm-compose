@@ -10,9 +10,9 @@ fn cardinality_test_at_most_one_with_none() {
     let linker = Linker::new( &engine );
     
     let ( tree, warnings ) = PluginTree::<InterfaceDir, PluginDir>::new::<FixtureError, _, _>( vec![], InterfaceId::new( 0x_00_00_00_00_u64 ) );
-    if !warnings.is_empty() { panic!( "Produced warnings: {:?}", warnings )};
+    assert_no_warnings!( warnings );
 
     let ( _, warnings ) = tree.load( &engine, &linker ).unwrap();
-    if !warnings.is_empty() { panic!( "Produced warnings: {:?}", warnings )};
+    assert_no_warnings!( warnings );
 
 }

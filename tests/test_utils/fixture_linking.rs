@@ -69,7 +69,7 @@ macro_rules! bind_fixtures {
         impl PluginDir {
 
             #[allow( unused )]
-            fn new( id: wasm_compose::PluginId ) -> Result<Self, FixtureError> {
+            pub fn new( id: wasm_compose::PluginId ) -> Result<Self, FixtureError> {
 
                 let root_path = Self::path( &id );
                 let manifest_path = root_path.join( "manifest.toml" );
@@ -101,14 +101,14 @@ macro_rules! bind_fixtures {
             type SocketIter<'a> = &'a [wasm_compose::InterfaceId];
 
             fn get_id( &self ) -> Result<&wasm_compose::PluginId, Self::Error> { Ok( &self.id ) }
-            fn get_plug( &self ) -> Result<&wasm_compose::InterfaceId, Self::Error> { 
+            fn get_plug( &self ) -> Result<&wasm_compose::InterfaceId, Self::Error> {
                 Ok( &self.plug )
             }
-            fn get_sockets<'a>( &'a self ) -> Result<Self::SocketIter<'a>, Self::Error> { 
+            fn get_sockets<'a>( &'a self ) -> Result<Self::SocketIter<'a>, Self::Error> {
                 Ok( &self.sockets )
             }
 
-            fn component( &self, engine: &wasm_compose::Engine ) -> Result<wasm_compose::Component, Self::Error> { 
+            fn component( &self, engine: &wasm_compose::Engine ) -> Result<wasm_compose::Component, Self::Error> {
                 wasm_compose::Component::from_file( engine, &self.wasm_path ).map_err(| e | FixtureError::WasmLoad( e.to_string() ))
             }
 

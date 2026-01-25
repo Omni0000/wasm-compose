@@ -4,7 +4,7 @@ mod initialisation ;
 mod utils ;
 
 pub use wasmtime::Engine ;
-pub use wasmtime::component::{ Component, Linker };
+pub use wasmtime::component::{ Component, Linker, Val };
 
 pub use initialisation::{
     InterfaceId, PluginId,

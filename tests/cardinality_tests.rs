@@ -1,5 +1,6 @@
 
 include!( "test_utils/fixture_linking.rs" );
+include!( "test_utils/assert_no_warnings.rs" );
 
 #[path = "cardinality"] mod cardinality {
 
