@@ -46,7 +46,7 @@ impl<I: InterfaceData, P: PluginData> PluginTree<I, P> {
 
     pub fn load<IE: std::error::Error, PE: std::error::Error>(
         self,
-        engine: Engine,
+        engine: &Engine,
         exports: &Linker<PluginContext<P>>,
     ) -> PartialResult<PluginTreeHead<I, P>, PreloadError<IE, PE>, PreloadError<IE, PE>>
     where 
@@ -55,7 +55,7 @@ impl<I: InterfaceData, P: PluginData> PluginTree<I, P> {
         I: InterfaceData<Error = IE> + Sized,
         P: PluginData<Error = PE> + Sized + Send + Sync,
     {
-        match preload_plugin_tree( self.socket_map, &engine, exports, self.root_interface_id ) {
+        match preload_plugin_tree( self.socket_map, engine, exports, self.root_interface_id ) {
             Ok((( _interface, socket ), errors )) => Ok(( PluginTreeHead { _interface, socket }, errors )),
             Err(( err, errors )) => Err(( err , errors )),
         }

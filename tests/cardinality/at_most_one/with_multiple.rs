@@ -1,6 +1,5 @@
-use wasm_compose::{ initialise_plugin_tree, UnrecoverableStartupError, PreloadError, InterfaceCardinality, InterfaceId };
-use wasmtime::Engine ;
-use wasmtime::component::Linker ;
+
+bind_fixtures!( "cardinality", "at_most_one", "with_multiple" );
 
 #[test]
 fn cardinality_test_at_most_one_with_multiple() {

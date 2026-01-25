@@ -69,8 +69,8 @@ where
 
 }
 
-#[inline] fn preload_child_sockets<I, P, IE, PE>(
-    socket_ids: impl IntoIterator<Item = InterfaceId>,
+#[inline] fn preload_child_sockets<'a, I, P, IE, PE>(
+    socket_ids: impl IntoIterator<Item = &'a InterfaceId>,
     socket_map: HashMap<InterfaceId, SocketState<I, P>>,
     engine: &Engine,
     default_linker: &Linker<PluginContext<P>>,
@@ -120,7 +120,7 @@ where
     let mut linker_instance = root.instance( &interface_ident ).map_err( PreloadError::FailedToLinkRootInterface )?;
 
     match interface.get_functions() {
-        Ok( functions ) => functions.into_iter().try_for_each(| function: FunctionData | -> Result<(), PreloadError<IE, PE>> {
+        Ok( functions ) => functions.into_iter().try_for_each(| function | -> Result<(), PreloadError<IE, PE>> {
                 
             let function_clone: FunctionData = function.clone();
             let interface_ident_clone = interface_ident.clone();
@@ -142,9 +142,9 @@ where
     };
 
     match interface.get_resources() {
-        Ok( resources ) => resources.into_iter().try_for_each(| resource: String | linker_instance
+        Ok( resources ) => resources.into_iter().try_for_each(| resource | linker_instance
             .resource( resource.as_str(), ResourceType::host::<Arc<ResourceWrapper>>(), ResourceWrapper::drop )
-            .map_err(| err | PreloadError::FailedToLink( resource, err ))
+            .map_err(| err | PreloadError::FailedToLink( resource.clone(), err ))
         )?,
         Err( err ) => return Err( PreloadError::CorruptedInterfaceManifest( err )),
     };

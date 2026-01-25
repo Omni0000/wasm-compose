@@ -14,11 +14,11 @@ use crate::{ InterfaceId, PluginId };
 pub trait PluginData {
 
     type Error: std::error::Error ;
-    type SocketIter: IntoIterator<Item = InterfaceId> ;
+    type SocketIter<'a>: IntoIterator<Item = &'a InterfaceId> where Self: 'a ;
 
     fn get_id( &self ) -> Result<&PluginId, Self::Error> ;
     fn get_plug( &self ) -> Result<&InterfaceId, Self::Error> ;
-    fn get_sockets( &self ) -> Result<Self::SocketIter, Self::Error> ;
+    fn get_sockets<'a>( &'a self ) -> Result<Self::SocketIter<'a>, Self::Error> ;
 
     fn component( &self, engine: &Engine ) -> Result<Component, Self::Error> ;
 

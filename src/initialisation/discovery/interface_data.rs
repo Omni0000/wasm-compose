@@ -14,15 +14,15 @@ use crate::initialisation::InterfaceId ;
 pub trait InterfaceData: Sized {
 
     type Error ;
-    type FunctionIter: IntoIterator<Item = FunctionData> ;
-    type ResourceIter: IntoIterator<Item = String> ;
+    type FunctionIter<'a>: IntoIterator<Item = &'a FunctionData> where Self: 'a ;
+    type ResourceIter<'a>: IntoIterator<Item = &'a String> where Self: 'a ;
 
     fn new( id: InterfaceId ) -> Result<Self, Self::Error> ;
 
-    fn get_cardinality( &self ) -> Result<InterfaceCardinality, Self::Error> ;
+    fn get_cardinality( &self ) -> Result<&InterfaceCardinality, Self::Error> ;
     fn get_package_name( &self ) -> Result<&str, Self::Error> ;
-    fn get_functions( &self ) -> Result<Self::FunctionIter, Self::Error> ;
-    fn get_resources( &self ) -> Result<Self::ResourceIter, Self::Error> ;
+    fn get_functions<'a>( &'a self ) -> Result<Self::FunctionIter<'a>, Self::Error> ;
+    fn get_resources<'a>( &'a self ) -> Result<Self::ResourceIter<'a>, Self::Error> ;
 
 }
 
@@ -46,6 +46,11 @@ pub struct FunctionData {
     return_type: FunctionReturnType,
 }
 impl FunctionData {
+
+    pub fn new( function: Function, return_type: FunctionReturnType ) -> Self {
+        Self { function, return_type }
+    }
+
     #[inline] pub fn name( &self ) -> &str { &self.function.name }
     #[inline] pub fn has_return( &self ) -> bool { self.return_type != FunctionReturnType::None }
     #[inline] pub fn return_type( &self ) -> &FunctionReturnType { &self.return_type }
