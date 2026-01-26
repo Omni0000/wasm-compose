@@ -1,12 +1,15 @@
 use std::collections::HashMap ;
-use std::sync::{ Arc, RwLock };
+use std::sync::Arc ;
 use wasmtime::{ Engine, Store };
-use wasmtime::component::{ Linker, ResourceType };
+use wasmtime::component::Linker ;
 
 use crate::utils::Merge ;
-use crate::InterfaceId ;
-use super::{ PluginData, InterfaceData, FunctionData };
-use super::{ Socket, PluginInstance, load_socket, SocketState, LoadResult, ResourceWrapper, LoadError, LoadedSocket };
+use crate::interface::{ InterfaceId, InterfaceData };
+use crate::plugin::PluginData ;
+use crate::plugin_instance::PluginInstance ;
+use super::{ LoadResult, LoadError, LoadedSocket };
+use super::load_socket::{ SocketState, load_socket };
+use super::link_socket ;
 
 
 
@@ -77,7 +80,6 @@ where
     I: InterfaceData,
     P: PluginData + Send + Sync,
 {
-
     match socket_ids.into_iter().try_fold(
         ( socket_map, Vec::<( _, _ )>::new(), Vec::<LoadError<I, P>>::new() ),
         |( socket_map, sockets, errors ): ( _, Vec<_>, Vec<_> ), socket_id |
@@ -91,58 +93,4 @@ where
         Ok(( socket_map, sockets, errors )) => LoadResult { socket_map, result: Ok( sockets ), errors },
         Err(( socket_map, err, errors )) => LoadResult { socket_map, result: Err( err ), errors },
     }
-
-}
-
-#[inline] fn link_socket<I, P>(
-    mut linker: Linker<P>,
-    interface: &Arc<I>,
-    socket: &Arc<Socket<RwLock<PluginInstance<P>>>>,
-) -> Result<Linker<P>, LoadError<I, P>>
-where
-    I: InterfaceData,
-    P: PluginData + Send + Sync,
-{
-
-    let package = match interface.get_package_name() {
-        Ok( package ) => package,
-        Err( err ) => return Err( LoadError::CorruptedInterfaceManifest( err )),
-    };
-    let interface_ident = format!( "{}/root", package );
-
-    let mut root = linker.root();
-    let mut linker_instance = root.instance( &interface_ident ).map_err( LoadError::FailedToLinkRootInterface )?;
-
-    match interface.get_functions() {
-        Ok( functions ) => functions.into_iter().try_for_each(| function | -> Result<(), LoadError<I, P>> {
-
-            let function_clone: FunctionData = function.clone();
-            let interface_ident_clone = interface_ident.clone();
-            let socket_arc_clone = Arc::clone( socket );
-
-            macro_rules! link {( $dispatch: expr ) => {
-                linker_instance.func_new( function.name(), move | ctx, _ty, args, results | Ok(
-                    results[0] = $dispatch( &socket_arc_clone, ctx, &interface_ident_clone, &function_clone, args )
-                )).map_err(| err | LoadError::FailedToLink( function.name().to_string(), err ) )
-            }}
-
-            match function.is_method() {
-                false => link!( Socket::dispatch_function_all::<I::Error> ),
-                true => link!( Socket::dispatch_function_method::<I::Error> ),
-            }
-
-        })?,
-        Err( err ) => return Err( LoadError::CorruptedInterfaceManifest( err )),
-    }
-
-    match interface.get_resources() {
-        Ok( resources ) => resources.into_iter().try_for_each(| resource | linker_instance
-            .resource( resource.as_str(), ResourceType::host::<Arc<ResourceWrapper>>(), ResourceWrapper::drop )
-            .map_err(| err | LoadError::FailedToLink( resource.clone(), err ))
-        )?,
-        Err( err ) => return Err( LoadError::CorruptedInterfaceManifest( err )),
-    }
-
-    Ok( linker )
-
 }

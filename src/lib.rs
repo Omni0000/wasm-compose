@@ -1,14 +1,19 @@
-mod types ;
-mod discovery ;
+mod interface ;
+mod plugin ;
 mod loading ;
 mod plugin_tree ;
+mod plugin_tree_head ;
+mod socket ;
+mod plugin_instance ;
 mod utils ;
 
 pub use wasmtime::Engine ;
 pub use wasmtime::component::{ Component, Linker, Val };
 
-pub use types::{ InterfaceId, PluginId };
-pub use discovery::{ PluginData, InterfaceData, InterfaceCardinality, FunctionData, FunctionReturnType };
-pub use loading::{ Socket, LoadError };
-pub use plugin_tree::{ PluginTree, PluginTreeHead };
+pub use interface::{ InterfaceId, InterfaceData, InterfaceCardinality, FunctionData, FunctionReturnType };
+pub use plugin::{ PluginId, PluginData };
+pub use loading::{ LoadError, DispatchError };
+pub use plugin_tree::PluginTree ;
+pub use plugin_tree_head::PluginTreeHead ;
+pub use socket::Socket ;
 pub use utils::{ PartialSuccess, PartialResult };

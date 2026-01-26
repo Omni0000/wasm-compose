@@ -1,8 +1,20 @@
 use wit_parser::{ Function, FunctionKind };
 
-use crate::InterfaceId ;
 
 
+/// Unique identifier for an interface.
+#[derive( Copy, Clone, Debug, Eq, Hash, PartialEq )]
+pub struct InterfaceId( u64 );
+
+impl InterfaceId {
+    pub const fn new( id: u64 ) -> Self { Self( id )}
+}
+
+impl std::fmt::Display for InterfaceId {
+    fn fmt( &self, f: &mut std::fmt::Formatter ) -> Result<(),std::fmt::Error> {
+        std::fmt::Display::fmt( &self.0, f )
+    }
+}
 
 /// Trait for accessing interface metadata from a user-defined source (filesystem, database, etc.).
 pub trait InterfaceData: Sized {
@@ -14,8 +26,8 @@ pub trait InterfaceData: Sized {
     /// Loads interface metadata for the given ID from the underlying data source.
     ///
     /// # Errors
-    /// Implementations may fail due to IO errors, parse errors when reading
-    /// WIT definitions, or if no interface with the given ID exists.
+    /// Constructor may fail when an interface of the given id cannot be constructed
+    /// or any other reason determined by the consumer
     fn new( id: InterfaceId ) -> Result<Self, Self::Error> ;
 
     /// Returns how many plugins may/must implement this interface.
@@ -68,6 +80,7 @@ impl FunctionData {
         FunctionKind::AsyncFreestanding | FunctionKind::AsyncMethod( _ ) | FunctionKind::AsyncStatic( _ )
         => unimplemented!( "Async functions are not yet implemented" ),
     }}
+
 }
 
 /// Categorizes a function's return type for dispatch handling.

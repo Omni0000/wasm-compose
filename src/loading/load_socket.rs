@@ -5,13 +5,14 @@ use wasmtime::Engine;
 use wasmtime::component::Linker ;
 
 use crate::utils::{ MapScanTrait, Merge };
-use crate::InterfaceId ;
-use super::{ InterfaceData, PluginData, InterfaceCardinality };
-use super::{ Socket, PluginInstance, LoadResult, load_plugin, LoadError };
+use crate::interface::{ InterfaceId, InterfaceData, InterfaceCardinality };
+use crate::plugin::PluginData ;
+use crate::socket::Socket ;
+use crate::plugin_instance::PluginInstance ;
+use super::{ LoadResult, LoadError, LoadedSocket };
+use super::load_plugin::load_plugin ;
 
 
-
-pub type LoadedSocket<P> = Socket<RwLock<PluginInstance<P>>> ;
 
 #[derive( Debug, Default )]
 pub(super) enum SocketState<I: InterfaceData, P: PluginData + 'static> {

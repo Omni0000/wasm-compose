@@ -1,9 +1,29 @@
 use wasmtime::Engine ;
 use wasmtime::component::Component ;
 
-use crate::{ InterfaceId, PluginId };
+use crate::InterfaceId ;
 
 
+
+/// Unique identifier for a plugin.
+#[derive( Eq, Hash, PartialEq, Debug, Clone )]
+pub struct PluginId( String );
+
+impl PluginId {
+    pub const fn new( id: String ) -> Self { Self( id ) }
+}
+
+impl std::fmt::Display for PluginId {
+    fn fmt( &self, f: &mut std::fmt::Formatter ) -> Result<(), std::fmt::Error> {
+        std::fmt::Display::fmt( &self.0, f )
+    }
+}
+
+impl AsRef<std::path::Path> for PluginId {
+    fn as_ref( &self ) -> &std::path::Path {
+        AsRef::<std::path::Path>::as_ref( &self.0 )
+    }
+}
 
 /// Trait for accessing plugin metadata from a user-defined source (filesystem, database, etc.).
 pub trait PluginData: Sized {
@@ -15,27 +35,24 @@ pub trait PluginData: Sized {
     ///
     /// # Errors
     /// Implementations may fail if the underlying data source is unavailable
-    /// (e.g., IO errors, parse errors, missing manifest fields).
     fn get_id( &self ) -> Result<&PluginId, Self::Error> ;
 
     /// Returns the interface ID that this plugin implements (its "plug").
     ///
     /// # Errors
     /// Implementations may fail if the underlying data source is unavailable
-    /// (e.g., IO errors, parse errors, missing manifest fields).
     fn get_plug( &self ) -> Result<&InterfaceId, Self::Error> ;
 
     /// Returns the interface IDs that this plugin depends on (its "sockets").
     ///
     /// # Errors
     /// Implementations may fail if the underlying data source is unavailable
-    /// (e.g., IO errors, parse errors, missing manifest fields).
     fn get_sockets( &self ) -> Result<Self::SocketIter<'_>, Self::Error> ;
 
     /// Compiles this plugin's WASM binary into a wasmtime Component.
     ///
     /// # Errors
-    /// Implementations may fail due to IO errors when reading the WASM file,
+    /// Implementations may fail due to any errors when reading the WASM source,
     /// or wasmtime compilation errors if the binary is invalid.
     fn component( &self, engine: &Engine ) -> Result<Component, Self::Error> ;
 

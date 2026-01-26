@@ -2,12 +2,13 @@ use std::sync::Arc ;
 use std::collections::HashMap ;
 use thiserror::Error ;
 use wasmtime::Engine;
-use wasmtime::component::Linker ;
+use wasmtime::component::{ Linker, Val };
 
-use crate::InterfaceId ;
+use crate::interface::{ InterfaceId, InterfaceData, InterfaceCardinality };
+use crate::plugin::PluginData ;
 use crate::utils::PartialResult ;
-use super::{ InterfaceData, PluginData, InterfaceCardinality };
 use super::{ load_socket, SocketState, LoadedSocket };
+use super::{ ResourceCreationError, ResourceReceiveError };
 
 
 
@@ -40,7 +41,7 @@ pub enum LoadError<I: InterfaceData, P: PluginData> {
     FailedToReadWasm( std::io::Error ),
 
     #[error( "Failed to link root interface: {0}" )]
-    FailedToLinkRootInterface( wasmtime::Error ),
+    FailedToLinkInterface( wasmtime::Error ),
 
     #[error( "Failed to link function '{0}': {1}" )]
     FailedToLink( String, wasmtime::Error ),
@@ -60,11 +61,39 @@ impl<I: InterfaceData, P: PluginData> std::fmt::Debug for LoadError<I, P> {
             Self::CorruptedPluginManifest( e ) => f.debug_tuple( "CorruptedPluginManifest" ).field( e ).finish(),
             Self::FailedToLoadComponent( e ) => f.debug_tuple( "FailedToLoadComponent" ).field( e ).finish(),
             Self::FailedToReadWasm( e ) => f.debug_tuple( "FailedToReadWasm" ).field( e ).finish(),
-            Self::FailedToLinkRootInterface( e ) => f.debug_tuple( "FailedToLinkRootInterface" ).field( e ).finish(),
+            Self::FailedToLinkInterface( e ) => f.debug_tuple( "FailedToLinkInterface" ).field( e ).finish(),
             Self::FailedToLink( name, e ) => f.debug_tuple( "FailedToLink" ).field( name ).field( e ).finish(),
             Self::AlreadyHandled => f.debug_struct( "AlreadyHandled" ).finish(),
         }
     }
+}
+
+/// Errors that can occur when dispatching a function call to plugins.
+#[derive( Error, Debug )]
+pub enum DispatchError<InterfaceError: std::error::Error> {
+    #[error( "Deadlock" )] Deadlock,
+    #[error( "Wit parser error: {0}")] WitParserError( InterfaceError ),
+    #[error( "Invalid Interface: {0}" )] InvalidInterface( String ),
+    #[error( "Invalid Function: {0}" )] InvalidFunction( String ),
+    #[error( "Missing Response" )] MissingResponse,
+    #[error( "Runtime Exception" )] RuntimeException( wasmtime::Error ),
+    #[error( "Invalid Argument LIst" )] InvalidArgumentList,
+    #[error( "Resource Create Error: {0}" )] ResourceCreationError( #[from] ResourceCreationError ),
+    #[error( "Resource Receive Error: {0}" )] ResourceReceiveError( #[from] ResourceReceiveError ),
+}
+
+impl<T: std::error::Error> From<DispatchError<T>> for Val {
+    fn from( error: DispatchError<T> ) -> Val { match error {
+        DispatchError::Deadlock => Val::Variant( "deadlock".to_string(), None ),
+        DispatchError::WitParserError( err ) => Val::Variant( "wit-parser-error".to_string(), Some( Box::new( Val::String( err.to_string() )))),
+        DispatchError::InvalidInterface( package ) => Val::Variant( "invalid-interface".to_string(), Some( Box::new( Val::String( package )))),
+        DispatchError::InvalidFunction( function ) => Val::Variant( "invalid-function".to_string(), Some( Box::new( Val::String( function )))),
+        DispatchError::MissingResponse => Val::Variant( "missing-response".to_string(), None ),
+        DispatchError::RuntimeException( exception ) => Val::Variant( "runtime-exception".to_string(), Some( Box::new( Val::String( exception.to_string() )))),
+        DispatchError::InvalidArgumentList => Val::Variant( "invalid-argument-list".to_string(), None ),
+        DispatchError::ResourceCreationError( err ) => err.into(),
+        DispatchError::ResourceReceiveError( err ) => err.into(),
+    }}
 }
 
 /// Result of a load operation that may have partial failures.

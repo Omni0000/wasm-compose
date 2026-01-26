@@ -1,24 +1,15 @@
 use std::collections::HashMap ;
-use std::sync::{ Arc, RwLock };
+use itertools::Itertools ;
 use wasmtime::Engine ;
 use wasmtime::component::Linker ;
 
-use crate::types::InterfaceId ;
-use crate::discovery::{ InterfaceData, PluginData, discover_all };
-use crate::loading::{ Socket, LoadError, load_plugin_tree, PluginInstance };
-use crate::utils::{ PartialSuccess, PartialResult };
+use crate::interface::{ InterfaceId, InterfaceData };
+use crate::plugin::PluginData ;
+use crate::plugin_tree_head::PluginTreeHead ;
+use crate::loading::{ LoadError, load_plugin_tree };
+use crate::utils::{ Merge, PartialSuccess, PartialResult };
 
 
-
-/// The root node of a loaded plugin tree.
-///
-/// Obtained from [`PluginTree::load`]. Provides access to dispatch functions
-/// on the root socket's plugins.
-pub struct PluginTreeHead<I: InterfaceData, P: PluginData + 'static> {
-    /// Retained for future hot-loading support (adding/removing plugins at runtime).
-    _interface: Arc<I>,
-    pub(crate) socket: Arc<Socket<RwLock<PluginInstance<P>>>>,
-}
 
 /// An unloaded plugin dependency graph.
 ///
@@ -62,8 +53,18 @@ impl<I: InterfaceData, P: PluginData> PluginTree<I, P> {
     where
         E: From<I::Error> + From<P::Error>,
     {
-        let ( socket_map, errors ) = discover_all::<I, P, E>( plugins, root_interface_id );
-        ( Self { root_interface_id, socket_map }, errors )
+        let ( entries, plugin_errors ) = plugins.into_iter()
+            .map(| handle | Result::<_, E>::Ok(( *handle.get_plug()?, handle )))
+            .partition_result::<Vec<_>, Vec<_>, _, _>();
+
+        let mut plugin_group_map = entries.into_iter().into_group_map();
+        plugin_group_map.entry( root_interface_id ).or_default();
+
+        let ( socket_map, interface_errors ) = plugin_group_map.into_iter()
+            .map(|( id, plugins )| Ok(( id, ( I::new( id )?, plugins ))))
+            .partition_result::<HashMap<_, _>, Vec<_>, _, _>();
+
+        ( Self { root_interface_id, socket_map }, plugin_errors.merge_all( interface_errors ) )
     }
 
     /// Compiles and links all plugins in the tree, returning a loaded tree head.
