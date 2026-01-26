@@ -37,6 +37,12 @@ impl<T> Socket<T> {
     }
 }
 impl<T: PluginData> Socket<RwLock<PluginInstance<T>>> {
+    /// Looks up a plugin instance by ID within this socket.
+    ///
+    /// Returns `None` if no plugin with the given ID exists in this socket.
+    ///
+    /// # Errors
+    /// Returns `PoisonError` if a plugin's `RwLock` was poisoned by a panic in another thread.
     #[allow( clippy::type_complexity )]
     pub fn get( &self, id: &PluginId ) -> Result<Option<&RwLock<PluginInstance<T>>>,PoisonError<RwLockReadGuard<'_, PluginInstance<T>>>> {
         Ok( match self {

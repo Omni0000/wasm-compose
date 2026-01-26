@@ -29,10 +29,22 @@ impl<I: InterfaceData, P: PluginData> PluginTree<I, P> {
     where
         E: From<I::Error> + From<P::Error>,
     {
-        let ( socket_map, errors ) = discover_all::<I, P, E>( plugins, &root_interface_id );
+        let ( socket_map, errors ) = discover_all::<I, P, E>( plugins, root_interface_id );
         ( Self { root_interface_id, socket_map }, errors )
     }
 
+    /// Compiles and links all plugins in the tree, returning a loaded tree head.
+    ///
+    /// This recursively loads plugins starting from the root interface, compiling
+    /// WASM components and linking their dependencies.
+    ///
+    /// # Errors
+    /// Returns `LoadError` variants for:
+    /// - Invalid or missing socket interfaces
+    /// - Dependency cycles between plugins
+    /// - Cardinality violations (too few/many plugins for an interface)
+    /// - Corrupted interface or plugin manifests
+    /// - WASM compilation or linking failures
     pub fn load(
         self,
         engine: &Engine,
@@ -42,7 +54,7 @@ impl<I: InterfaceData, P: PluginData> PluginTree<I, P> {
         P: Send + Sync,
     {
         match load_plugin_tree( self.socket_map, engine, exports, self.root_interface_id ) {
-            Ok((( _interface, socket ), errors )) => Ok(( PluginTreeHead { _interface, socket }, errors )),
+            Ok((( interface, socket ), errors )) => Ok(( PluginTreeHead { _interface: interface, socket }, errors )),
             Err(( err, errors )) => Err(( err , errors )),
         }
     }

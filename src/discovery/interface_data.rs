@@ -4,18 +4,43 @@ use crate::InterfaceId ;
 
 
 
+/// Trait for accessing interface metadata from a user-defined source (filesystem, database, etc.).
 pub trait InterfaceData: Sized {
 
     type Error: std::error::Error ;
     type FunctionIter<'a>: IntoIterator<Item = &'a FunctionData> where Self: 'a ;
     type ResourceIter<'a>: IntoIterator<Item = &'a String> where Self: 'a ;
 
+    /// Loads interface metadata for the given ID from the underlying data source.
+    ///
+    /// # Errors
+    /// Implementations may fail due to IO errors, parse errors when reading
+    /// WIT definitions, or if no interface with the given ID exists.
     fn new( id: InterfaceId ) -> Result<Self, Self::Error> ;
 
+    /// Returns how many plugins may/must implement this interface.
+    ///
+    /// # Errors
+    /// Implementations may fail if the underlying data source is unavailable.
     fn get_cardinality( &self ) -> Result<&InterfaceCardinality, Self::Error> ;
+
+    /// Returns the WIT package name for this interface.
+    ///
+    /// # Errors
+    /// Implementations may fail if the underlying data source is unavailable.
     fn get_package_name( &self ) -> Result<&str, Self::Error> ;
-    fn get_functions<'a>( &'a self ) -> Result<Self::FunctionIter<'a>, Self::Error> ;
-    fn get_resources<'a>( &'a self ) -> Result<Self::ResourceIter<'a>, Self::Error> ;
+
+    /// Returns the functions exported by this interface.
+    ///
+    /// # Errors
+    /// Implementations may fail if WIT parsing fails or the data source is unavailable.
+    fn get_functions( &self ) -> Result<Self::FunctionIter<'_>, Self::Error> ;
+
+    /// Returns the resource types defined by this interface.
+    ///
+    /// # Errors
+    /// Implementations may fail if WIT parsing fails or the data source is unavailable.
+    fn get_resources( &self ) -> Result<Self::ResourceIter<'_>, Self::Error> ;
 
 }
 
