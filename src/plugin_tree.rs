@@ -10,11 +10,36 @@ use crate::utils::{ PartialSuccess, PartialResult };
 
 
 
+/// The root node of a loaded plugin tree.
+///
+/// Obtained from [`PluginTree::load`]. Provides access to dispatch functions
+/// on the root socket's plugins.
 pub struct PluginTreeHead<I: InterfaceData, P: PluginData + 'static> {
+    /// Retained for future hot-loading support (adding/removing plugins at runtime).
     _interface: Arc<I>,
     pub(crate) socket: Arc<Socket<RwLock<PluginInstance<P>>>>,
 }
 
+/// An unloaded plugin dependency graph.
+///
+/// Built from a list of plugins by grouping them according to the interfaces
+/// they implement (their "plug") and depend on (their "sockets").
+///
+/// # Type Parameters
+/// - `I`: [`InterfaceData`] implementation for loading interface metadata
+/// - `P`: [`PluginData`] implementation for loading plugin metadata
+///
+/// # Example
+/// ```ignore
+/// let plugins = vec![
+///     MyPluginData::new( "auth-provider" ),
+///     MyPluginData::new( "logger" ),
+/// ];
+/// let ( tree, discovery_errors ) = PluginTree::<MyInterfaceData, _>::new::<MyError>(
+///     plugins,
+///     InterfaceId::new( 0 ),
+/// );
+/// ```
 pub struct PluginTree<I: InterfaceData, P: PluginData> {
     root_interface_id: InterfaceId,
     socket_map: HashMap<InterfaceId, ( I, Vec<P> )>,
@@ -22,6 +47,14 @@ pub struct PluginTree<I: InterfaceData, P: PluginData> {
 
 impl<I: InterfaceData, P: PluginData> PluginTree<I, P> {
 
+    /// Builds a plugin dependency graph from the given plugins.
+    ///
+    /// Plugins are grouped by the interface they implement. The `root_interface_id`
+    /// specifies the entry point of the tree - the interface whose plugins will be
+    /// directly accessible via [`PluginTreeHead::dispatch`] after loading.
+    ///
+    /// The error type `E` must be convertible from both `I::Error` and `P::Error`,
+    /// allowing unified error handling across interface and plugin metadata access.
     pub fn new<E>(
         plugins: Vec<P>,
         root_interface_id: InterfaceId,

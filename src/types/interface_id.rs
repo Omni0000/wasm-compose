@@ -1,5 +1,5 @@
 
-
+/// Unique identifier for an interface.
 #[derive( Copy, Clone, Debug, Eq, Hash, PartialEq )]
 pub struct InterfaceId( u64 );
 

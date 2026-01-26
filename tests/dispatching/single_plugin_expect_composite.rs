@@ -16,7 +16,7 @@ fn dispatch_test_single_plugin_expect_composite() {
     let ( tree, warnings ) = tree.load( &engine, &linker ).unwrap();
     assert_no_warnings!( warnings );
 
-    match tree.dispatch_function_on_root( "test:composite/root", "get-composite", true, &[] ) {
+    match tree.dispatch( "test:composite/root", "get-composite", true, &[] ) {
         wasm_compose::Socket::ExactlyOne( Ok( Val::Tuple( fields ) )) => {
             assert_eq!( fields[0], Val::U32( 42 ) );
             assert_eq!( fields[1], Val::U32( 24 ) );

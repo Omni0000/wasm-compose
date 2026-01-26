@@ -8,7 +8,7 @@ mod dispatch ;
 mod resource_wrapper ;
 mod socket ;
 
-pub use plugin_instance::PluginInstance ;
+pub(crate) use plugin_instance::PluginInstance ;
 pub use load_plugin_tree::LoadError ;
 pub use socket::Socket ;
 pub(crate) use load_plugin_tree::load_plugin_tree ;

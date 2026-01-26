@@ -44,6 +44,10 @@ pub trait InterfaceData: Sized {
 
 }
 
+/// Metadata about a function exported by an interface.
+///
+/// Typically constructed from WIT definitions. Used during linking to wire up
+/// cross-plugin dispatch.
 #[derive( Debug, Clone )]
 pub struct FunctionData {
     function: Function,
@@ -66,6 +70,9 @@ impl FunctionData {
     }}
 }
 
+/// Categorizes a function's return type for dispatch handling.
+///
+/// Resources require special wrapping to track ownership across plugin boundaries.
 #[derive( Debug, Clone, PartialEq )]
 pub enum FunctionReturnType {
     None,
@@ -73,6 +80,12 @@ pub enum FunctionReturnType {
     DataWithResources,
 }
 
+/// Specifies how many plugins may or must implement an interface.
+///
+/// - `AtMostOne` - Zero or one plugin allowed
+/// - `ExactlyOne` - Exactly one plugin required
+/// - `AtLeastOne` - One or more plugins required
+/// - `Any` - Zero or more plugins allowed
 #[derive( Debug, PartialEq, Eq, Copy, Clone )]
 pub enum InterfaceCardinality {
     AtMostOne,

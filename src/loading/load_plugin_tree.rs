@@ -11,6 +11,10 @@ use super::{ load_socket, SocketState, LoadedSocket };
 
 
 
+/// Errors that can occur while loading and linking the plugin tree.
+///
+/// Loading attempts to proceed gracefully, loading as many plugins as possible
+/// while adhering to cardinality constraints.
 #[derive( Error )]
 pub enum LoadError<I: InterfaceData, P: PluginData> {
 

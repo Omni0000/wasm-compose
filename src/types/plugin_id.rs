@@ -1,5 +1,5 @@
 
-
+/// Unique identifier for a plugin.
 #[derive( Eq, Hash, PartialEq, Debug, Clone )]
 pub struct PluginId( String );
 

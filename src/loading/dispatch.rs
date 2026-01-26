@@ -9,6 +9,7 @@ use super::{ InterfaceData, PluginData, PluginTreeHead, Socket, PluginInstance, 
 
 
 
+/// Errors that can occur when dispatching a function call to plugins.
 #[derive( Error, Debug )]
 pub enum DispatchError<InterfaceError: std::error::Error> {
     #[error( "Deadlock" )] Deadlock,
@@ -38,7 +39,17 @@ impl<T: std::error::Error> From<DispatchError<T>> for Val {
 
 
 impl<I: InterfaceData, P: PluginData> PluginTreeHead<I, P> {
-    pub fn dispatch_function_on_root<IE>(
+    /// Invokes a function on all plugins in the root socket.
+    ///
+    /// Returns a [`Socket`] containing each plugin's result or error. The socket
+    /// variant mirrors the root interface's cardinality.
+    ///
+    /// # Arguments
+    /// * `interface_path` - WIT interface path (e.g., `"my:package/root"`)
+    /// * `function` - Function name to call
+    /// * `has_return` - Whether the function returns a value
+    /// * `data` - Arguments to pass to the function
+    pub fn dispatch<IE>(
         &self,
         interface_path: &str,
         function: &str,
@@ -55,7 +66,7 @@ impl<I: InterfaceData, P: PluginData> PluginTreeHead<I, P> {
 
 impl<T: PluginData> Socket<RwLock<PluginInstance<T>>> {
 
-    pub fn dispatch_function<IE: std::error::Error>(
+    pub(crate) fn dispatch_function<IE: std::error::Error>(
         &self,
         interface_path: &str,
         function: &str,
@@ -68,7 +79,7 @@ impl<T: PluginData> Socket<RwLock<PluginInstance<T>>> {
         )
     }
 
-    pub fn dispatch_function_all<E: std::error::Error>(
+    pub(crate) fn dispatch_function_all<E: std::error::Error>(
         &self,
         mut ctx: StoreContextMut<T>,
         interface_path: &str,
@@ -82,7 +93,7 @@ impl<T: PluginData> Socket<RwLock<PluginInstance<T>>> {
         })).into()
     }
 
-    pub fn dispatch_function_method<E: std::error::Error>(
+    pub(crate) fn dispatch_function_method<E: std::error::Error>(
         &self,
         ctx: StoreContextMut<T>,
         interface_path: &str,

@@ -8,6 +8,13 @@ use super::PluginInstance ;
 
 
 
+/// Container for plugin instances matching an interface's cardinality.
+///
+/// The variant used reflects the interface's cardinality constraint:
+/// - `AtMostOne` - Zero or one plugin allowed
+/// - `ExactlyOne` - Exactly one plugin required
+/// - `AtLeastOne` - One or more plugins required
+/// - `Any` - Zero or more plugins allowed
 #[derive( Debug )]
 pub enum Socket<T> {
     AtMostOne( Option<T> ),
@@ -17,6 +24,7 @@ pub enum Socket<T> {
 }
 
 impl<T> Socket<T> {
+    /// Transforms each plugin value by reference, preserving cardinality.
     pub fn map<N>( &self, mut map: impl FnMut( &T ) -> N ) -> Socket<N> {
         match self {
             Self::AtMostOne( Option::None ) => Socket::AtMostOne( Option::None ),
@@ -26,6 +34,7 @@ impl<T> Socket<T> {
             Self::Any( vec ) => Socket::Any( vec.iter().map(|( id, item ): ( &PluginId, _ )| ( id.clone(), map( item ) )).collect() ),
         }
     }
+    /// Transforms each plugin value by ownership, preserving cardinality.
     pub fn map_mut<N>( self, mut map: impl FnMut(T) -> N ) -> Socket<N> {
         match self {
             Self::AtMostOne( Option::None ) => Socket::AtMostOne( Option::None ),
@@ -44,7 +53,7 @@ impl<T: PluginData> Socket<RwLock<PluginInstance<T>>> {
     /// # Errors
     /// Returns `PoisonError` if a plugin's `RwLock` was poisoned by a panic in another thread.
     #[allow( clippy::type_complexity )]
-    pub fn get( &self, id: &PluginId ) -> Result<Option<&RwLock<PluginInstance<T>>>,PoisonError<RwLockReadGuard<'_, PluginInstance<T>>>> {
+    pub(crate) fn get( &self, id: &PluginId ) -> Result<Option<&RwLock<PluginInstance<T>>>,PoisonError<RwLockReadGuard<'_, PluginInstance<T>>>> {
         Ok( match self {
             Self::AtMostOne( Option::None ) => None,
             Self::AtMostOne( Some( plugin )) | Self::ExactlyOne( plugin ) => {

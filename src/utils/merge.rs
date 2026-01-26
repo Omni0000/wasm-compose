@@ -1,6 +1,8 @@
 
-/// Appends an element to the end of list and returns the list
-/// Why is this not in std?
+/// Chainable append operations for collections.
+///
+/// Provides a more functional style than `push()`/`extend()`, hiding mutation
+/// behind a helper that returns `Self`.
 pub trait Merge<T> {
     fn merge( self, value: T ) -> Self ;
     fn merge_all( self, values: impl IntoIterator<Item = T> ) -> Self ;
