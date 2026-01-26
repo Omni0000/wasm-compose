@@ -66,6 +66,7 @@ where
 
 }
 
+#[allow( clippy::type_complexity )]
 #[inline] fn load_child_sockets<'a, I, P>(
     socket_ids: impl IntoIterator<Item = &'a InterfaceId>,
     socket_map: HashMap<InterfaceId, SocketState<I, P>>,
@@ -78,9 +79,9 @@ where
 {
 
     match socket_ids.into_iter().try_fold(
-        ( socket_map, Vec::<( _, _ )>::new(), Vec::<LoadError<I::Error, P::Error>>::new() ),
+        ( socket_map, Vec::<( _, _ )>::new(), Vec::<LoadError<I, P>>::new() ),
         |( socket_map, sockets, errors ): ( _, Vec<_>, Vec<_> ), socket_id |
-            match load_socket( socket_map, engine, default_linker, socket_id.clone() ) {
+            match load_socket( socket_map, engine, default_linker, *socket_id ) {
                 LoadResult { socket_map, result: Ok( socket ), errors: new_errors } =>
                     Ok(( socket_map, sockets.merge(( socket.0, socket.1 )), errors.merge_all( new_errors ) )),
                 LoadResult { socket_map, result: Err( err ), errors: new_errors } =>
@@ -97,7 +98,7 @@ where
     mut linker: Linker<P>,
     interface: Arc<I>,
     socket: Arc<Socket<RwLock<PluginInstance<P>>>>,
-) -> Result<Linker<P>, LoadError<I::Error, P::Error>>
+) -> Result<Linker<P>, LoadError<I, P>>
 where
     I: InterfaceData,
     P: PluginData + Send + Sync,
@@ -113,7 +114,7 @@ where
     let mut linker_instance = root.instance( &interface_ident ).map_err( LoadError::FailedToLinkRootInterface )?;
 
     match interface.get_functions() {
-        Ok( functions ) => functions.into_iter().try_for_each(| function | -> Result<(), LoadError<I::Error, P::Error>> {
+        Ok( functions ) => functions.into_iter().try_for_each(| function | -> Result<(), LoadError<I, P>> {
 
             let function_clone: FunctionData = function.clone();
             let interface_ident_clone = interface_ident.clone();

@@ -14,6 +14,7 @@ macro_rules! bind_fixtures {
         }
 
 
+        #[derive( Debug )]
         pub struct InterfaceDir {
             _id: wasm_compose::InterfaceId,
             cardinality: wasm_compose::InterfaceCardinality,
@@ -59,6 +60,7 @@ macro_rules! bind_fixtures {
 
         }
 
+        #[derive( Debug )]
         pub struct PluginDir {
             id: wasm_compose::PluginId,
             plug: wasm_compose::InterfaceId,

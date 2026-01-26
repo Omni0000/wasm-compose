@@ -5,7 +5,6 @@ use wasmtime::{ AsContextMut, StoreContextMut };
 
 use crate::PluginId ;
 use super::PluginData ;
-use super::PluginContext ;
 
 
 
@@ -64,7 +63,7 @@ impl ResourceWrapper {
         // let resource = ResourceAny::try_from_resource( resource, &mut store ).map_err(|_| unreachable!( "Resource already taken" ))?;
         Ok( Arc::clone( wrapped ))
     }
-    pub fn drop<T: PluginData>( _: StoreContextMut<PluginContext<T>>, handle: u32) -> Result<(), wasmtime::Error> {
+    pub fn drop<T: PluginData>( _: StoreContextMut<T>, handle: u32) -> Result<(), wasmtime::Error> {
         let resource = Resource::<Arc<Self>>::new_own( handle );
         let mut lock = RESOURCE_TABLE.lock().map_err(|_| wasmtime::Error::new( ResourceReceiveError::LockRejected ))?;
         lock.delete( resource ).map_err(|_| wasmtime::Error::new( ResourceReceiveError::InvalidHandle ))?;

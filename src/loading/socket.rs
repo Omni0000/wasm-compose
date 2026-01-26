@@ -22,8 +22,8 @@ impl<T> Socket<T> {
             Self::AtMostOne( Option::None ) => Socket::AtMostOne( Option::None ),
             Self::AtMostOne( Some( t )) => Socket::AtMostOne( Some( map( t ))),
             Self::ExactlyOne( t ) => Socket::ExactlyOne( map( t )),
-            Self::AtLeastOne( vec ) => Socket::AtLeastOne( vec.iter().map(|( id, item ): ( &PluginId, _ )| ( id.clone(), map( &item ) )).collect() ),
-            Self::Any( vec ) => Socket::Any( vec.iter().map(|( id, item ): ( &PluginId, _ )| ( id.clone(), map( &item ) )).collect() ),
+            Self::AtLeastOne( vec ) => Socket::AtLeastOne( vec.iter().map(|( id, item ): ( &PluginId, _ )| ( id.clone(), map( item ) )).collect() ),
+            Self::Any( vec ) => Socket::Any( vec.iter().map(|( id, item ): ( &PluginId, _ )| ( id.clone(), map( item ) )).collect() ),
         }
     }
     pub fn map_mut<N>( self, mut map: impl FnMut(T) -> N ) -> Socket<N> {
@@ -37,6 +37,7 @@ impl<T> Socket<T> {
     }
 }
 impl<T: PluginData> Socket<RwLock<PluginInstance<T>>> {
+    #[allow( clippy::type_complexity )]
     pub fn get( &self, id: &PluginId ) -> Result<Option<&RwLock<PluginInstance<T>>>,PoisonError<RwLockReadGuard<'_, PluginInstance<T>>>> {
         Ok( match self {
             Self::AtMostOne( Option::None ) => None,

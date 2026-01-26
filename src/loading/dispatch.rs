@@ -5,7 +5,7 @@ use wasmtime::component::Val ;
 
 use crate::PluginId ;
 use super::{ FunctionData, FunctionReturnType };
-use super::{ InterfaceData, PluginData, PluginTreeHead, Socket, PluginInstance, PluginContext, ResourceWrapper, ResourceCreationError, ResourceReceiveError };
+use super::{ InterfaceData, PluginData, PluginTreeHead, Socket, PluginInstance, ResourceWrapper, ResourceCreationError, ResourceReceiveError };
 
 
 
@@ -70,7 +70,7 @@ impl<T: PluginData> Socket<RwLock<PluginInstance<T>>> {
 
     pub fn dispatch_function_all<E: std::error::Error>(
         &self,
-        mut ctx: StoreContextMut<PluginContext<T>>,
+        mut ctx: StoreContextMut<T>,
         interface_path: &str,
         function: &FunctionData,
         data: &[Val],
@@ -84,7 +84,7 @@ impl<T: PluginData> Socket<RwLock<PluginInstance<T>>> {
 
     pub fn dispatch_function_method<E: std::error::Error>(
         &self,
-        ctx: StoreContextMut<PluginContext<T>>,
+        ctx: StoreContextMut<T>,
         interface_path: &str,
         function: &FunctionData,
         data: &[Val],
@@ -97,7 +97,7 @@ impl<T: PluginData> Socket<RwLock<PluginInstance<T>>> {
     }
 
     #[inline] fn dispatch_function_of<E: std::error::Error>(
-        ctx: &mut StoreContextMut<PluginContext<T>>,
+        ctx: &mut StoreContextMut<T>,
         plugin: &RwLock<PluginInstance<T>>,
         interface_path: &str,
         function: &FunctionData,
@@ -142,7 +142,7 @@ impl<T: PluginData> Socket<RwLock<PluginInstance<T>>> {
 
     #[inline] fn route_method<E: std::error::Error>(
         &self,
-        mut ctx: StoreContextMut<PluginContext<T>>,
+        mut ctx: StoreContextMut<T>,
         interface_path: &str,
         function: &FunctionData,
         data: &[Val],

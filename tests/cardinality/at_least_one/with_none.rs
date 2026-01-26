@@ -1,4 +1,4 @@
-use wasm_compose::{ Engine, Linker, PluginTree, InterfaceId, PreloadError, InterfaceCardinality };
+use wasm_compose::{ Engine, Linker, PluginTree, InterfaceId, LoadError, InterfaceCardinality };
 
 bind_fixtures!( "cardinality", "at_least_one", "with_none" );
 use fixtures::{ InterfaceDir, PluginDir, FixtureError };
@@ -13,7 +13,7 @@ fn cardinality_test_at_least_one_with_none() {
     assert_no_warnings!( warnings );
 
     match tree.load( &engine, &linker ) {
-        Err(( PreloadError::FailedCardinalityRequirements( InterfaceCardinality::AtLeastOne, 0 ), _ )) => {},
+        Err(( LoadError::FailedCardinalityRequirements( InterfaceCardinality::AtLeastOne, 0 ), _ )) => {},
         Err(( err, warnings )) if warnings.is_empty() => panic!( "{}", err ),
         Err(( err, warnings )) => panic!( "Failed with warnings: {}\n{:?}", err, warnings ),
         Ok( _ ) => panic!( "Expected failure" ),

@@ -3,14 +3,13 @@ use wasmtime::Store ;
 
 use crate::PluginId ;
 use super::PluginData ;
-use super::PluginContext ;
 
 
 
 pub struct PluginInstance<T: PluginData + 'static> {
     pub(super) id: PluginId,
     pub(super) _component: Component,
-    pub(super) store: Store<PluginContext<T>>,
+    pub(super) store: Store<T>,
     pub(super) instance: Instance,
 }
 

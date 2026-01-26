@@ -5,7 +5,7 @@ use wasmtime::component::Linker ;
 
 use crate::types::InterfaceId ;
 use crate::discovery::{ InterfaceData, PluginData, discover_all };
-use crate::loading::{ Socket, PluginContext, PreloadError, preload_plugin_tree, PluginInstance };
+use crate::loading::{ Socket, LoadError, load_plugin_tree, PluginInstance };
 use crate::utils::{ PartialSuccess, PartialResult };
 
 
@@ -36,12 +36,12 @@ impl<I: InterfaceData, P: PluginData> PluginTree<I, P> {
     pub fn load(
         self,
         engine: &Engine,
-        exports: &Linker<PluginContext<P>>,
-    ) -> PartialResult<PluginTreeHead<I, P>, PreloadError<I::Error, P::Error>, PreloadError<I::Error, P::Error>>
+        exports: &Linker<P>,
+    ) -> PartialResult<PluginTreeHead<I, P>, LoadError<I, P>, LoadError<I, P>>
     where
         P: Send + Sync,
     {
-        match preload_plugin_tree( self.socket_map, engine, exports, self.root_interface_id ) {
+        match load_plugin_tree( self.socket_map, engine, exports, self.root_interface_id ) {
             Ok((( _interface, socket ), errors )) => Ok(( PluginTreeHead { _interface, socket }, errors )),
             Err(( err, errors )) => Err(( err , errors )),
         }

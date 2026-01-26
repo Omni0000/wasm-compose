@@ -24,6 +24,7 @@ impl<I: InterfaceData, P: PluginData> From<( I, Vec<P> )> for SocketState<I, P> 
     fn from(( interface, plugins ): ( I, Vec<P> )) -> Self { Self::Unprocessed( interface, plugins )}
 }
 
+#[allow( clippy::type_complexity )]
 pub(super) fn load_socket<I, P>(
     mut socket_map: HashMap<InterfaceId, SocketState<I, P>>,
     engine: &Engine,
@@ -104,7 +105,7 @@ where
             .pipe(| LoadResult { socket_map, result, errors } | match result {
                 Ok( plugins ) => LoadResult {
                     socket_map,
-                    result: Ok(( interface, Socket::AtLeastOne( plugins.into_iter().map(| plugin | ( plugin.id().clone(), plugin )).collect() ) )),
+                    result: Ok(( interface, Socket::AtLeastOne( plugins.into_iter().map(| plugin: PluginInstance<P> | ( plugin.id().clone(), plugin )).collect() ) )),
                     errors,
                 },
                 Err( err ) => LoadResult { socket_map, result: Err( err ), errors },
@@ -112,11 +113,11 @@ where
         InterfaceCardinality::Any => load_any( socket_map, engine, default_linker, plugins )
             .pipe(|( socket_map, plugins, errors )| {
                 let plugins = plugins.into_iter()
-                    .map(| plugin | ( plugin.id().clone(), plugin ))
+                    .map(| plugin: PluginInstance<P> | ( plugin.id().clone(), plugin ))
                     .collect();
                 LoadResult {
                     socket_map,
-                    result: Ok(( interface, Socket::AtLeastOne( plugins ) )),
+                    result: Ok(( interface, Socket::Any( plugins ) )),
                     errors,
                 }
             }),
@@ -207,6 +208,7 @@ where
 
 }
 
+#[allow( clippy::type_complexity )]
 #[inline] fn load_any<I, P>(
     socket_map: HashMap<InterfaceId, SocketState<I, P>>,
     engine: &Engine,
@@ -215,7 +217,7 @@ where
 ) -> (
     HashMap<InterfaceId, SocketState<I, P>>,
     Vec<PluginInstance<P>>,
-    Vec<LoadError<I::Error, P::Error>>,
+    Vec<LoadError<I, P>>,
 ) where
     I: InterfaceData,
     P: PluginData + Send + Sync,

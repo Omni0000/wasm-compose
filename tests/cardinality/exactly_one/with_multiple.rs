@@ -1,4 +1,4 @@
-use wasm_compose::{ Engine, Linker, PluginTree, InterfaceId, PluginId, PreloadError, InterfaceCardinality };
+use wasm_compose::{ Engine, Linker, PluginTree, InterfaceId, PluginId, LoadError, InterfaceCardinality };
 
 bind_fixtures!( "cardinality", "exactly_one", "with_multiple" );
 use fixtures::{ InterfaceDir, PluginDir, FixtureError };
@@ -17,10 +17,10 @@ fn cardinality_test_exactly_one_with_multiple() {
     assert_no_warnings!( warnings );
 
     match tree.load( &engine, &linker ) {
-        Err(( PreloadError::FailedCardinalityRequirements( InterfaceCardinality::ExactlyOne, n ), _ )) if n > 1 => {},
+        Err(( LoadError::FailedCardinalityRequirements( InterfaceCardinality::ExactlyOne, n ), _ )) if n > 1 => {},
         Err(( err, warnings )) if warnings.is_empty() => panic!( "{}", err ),
         Err(( err, warnings )) => panic!( "Failed with warnings: {}\n{:?}", err, warnings ),
-        Ok( _ ) => panic!( "Expected PluginPreloadError( FailedCardinalityRequirements( ExactlyOne, n )) where n > 1" ),
+        Ok( _ ) => panic!( "Expected PluginLoadError( FailedCardinalityRequirements( ExactlyOne, n )) where n > 1" ),
     };
 
 }

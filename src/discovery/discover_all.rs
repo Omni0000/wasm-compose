@@ -19,7 +19,7 @@ where
 {
 
     let ( entries, plugin_errors ) = plugins.into_iter()
-        .map(| handle | Result::<_, E>::Ok(( handle.get_plug()?.clone(), handle )))
+        .map(| handle | Result::<_, E>::Ok(( *handle.get_plug()?, handle )))
         .partition_result::<Vec<_>, Vec<_>, _, _>();
 
     let mut plugin_group_map = entries.into_iter().into_group_map();
