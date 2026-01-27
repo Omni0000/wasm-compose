@@ -2,28 +2,28 @@ use wasmtime::component::{ Component, Instance, Val };
 use wasmtime::Store ;
 
 use crate::plugin::{ PluginId, PluginData };
-use crate::loading::DispatchError ;
+use crate::loading::{ DispatchError, PluginContext };
 
 
 
-pub struct PluginInstance<T: PluginData + 'static> {
+pub struct PluginInstance<P: PluginData + 'static> {
     pub(crate) id: PluginId,
     pub(crate) _component: Component,
-    pub(crate) store: Store<T>,
+    pub(crate) store: Store<PluginContext<P>>,
     pub(crate) instance: Instance,
 }
 
-impl<T: PluginData + std::fmt::Debug> std::fmt::Debug for PluginInstance<T> {
+impl<P: PluginData + std::fmt::Debug> std::fmt::Debug for PluginInstance<P> {
     fn fmt( &self, f: &mut std::fmt::Formatter<'_> ) -> std::result::Result<(), std::fmt::Error> {
         f.debug_struct( "Plugin Instance" )
             .field( "id", &self.id )
-            .field( "data", &self.store.data() )
+            .field( "data", self.store.data() )
             .field( "store", &self.store )
             .finish_non_exhaustive()
     }
 }
 
-impl<T: PluginData> PluginInstance<T> {
+impl<P: PluginData> PluginInstance<P> {
 
     pub fn id( &self ) -> &PluginId { &self.id }
 

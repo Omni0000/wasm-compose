@@ -1,4 +1,4 @@
-use std::sync::{ Arc, RwLock };
+use std::sync::{ Arc, Mutex };
 use wasmtime::component::Val ;
 
 use crate::interface::InterfaceData ;
@@ -16,7 +16,7 @@ use crate::loading::DispatchError ;
 pub struct PluginTreeHead<I: InterfaceData, P: PluginData + 'static> {
     /// Retained for future hot-loading support (adding/removing plugins at runtime).
     pub(crate) _interface: Arc<I>,
-    pub(crate) socket: Arc<Socket<RwLock<PluginInstance<P>>>>,
+    pub(crate) socket: Arc<Socket<Mutex<PluginInstance<P>>>>,
 }
 
 impl<I: InterfaceData, P: PluginData> PluginTreeHead<I, P> {

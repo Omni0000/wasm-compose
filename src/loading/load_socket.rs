@@ -1,5 +1,5 @@
 use std::collections::HashMap ;
-use std::sync::{ Arc, RwLock };
+use std::sync::{ Arc, Mutex };
 use pipe_trait::Pipe;
 use wasmtime::Engine;
 use wasmtime::component::Linker ;
@@ -9,7 +9,7 @@ use crate::interface::{ InterfaceId, InterfaceData, InterfaceCardinality };
 use crate::plugin::PluginData ;
 use crate::socket::Socket ;
 use crate::plugin_instance::PluginInstance ;
-use super::{ LoadResult, LoadError, LoadedSocket };
+use super::{ LoadResult, LoadError, LoadedSocket, PluginContext };
 use super::load_plugin::load_plugin ;
 
 
@@ -29,7 +29,7 @@ impl<I: InterfaceData, P: PluginData> From<( I, Vec<P> )> for SocketState<I, P> 
 pub(super) fn load_socket<I, P>(
     mut socket_map: HashMap<InterfaceId, SocketState<I, P>>,
     engine: &Engine,
-    default_linker: &Linker<P>,
+    default_linker: &Linker<PluginContext<P>>,
     socket_id: InterfaceId
 ) -> LoadResult<( Arc<I>, Arc<LoadedSocket<P>> ), I, P>
 where
@@ -58,7 +58,7 @@ where
             match result {
                 Ok(( interface, plugins )) => {
                     let interface = Arc::new( interface );
-                    let plugins = Arc::new( plugins.map_mut( RwLock::new ));
+                    let plugins = Arc::new( plugins.map_mut( Mutex::new ));
                     socket_map.insert( socket_id, SocketState::Loaded( Arc::clone( &interface ), Arc::clone( &plugins )));
                     LoadResult { socket_map, result: Ok(( interface, plugins )), errors }
                 },
@@ -77,7 +77,7 @@ where
     interface: I,
     plugins: Vec<P>,
     engine: &Engine,
-    default_linker: &Linker<P>,
+    default_linker: &Linker<PluginContext<P>>,
 ) -> LoadResult<( I, Socket<PluginInstance<P>> ), I, P>
 where
     I: InterfaceData,
@@ -126,7 +126,7 @@ where
 #[inline] fn load_most_one<I, P>(
     socket_map: HashMap<InterfaceId, SocketState<I, P>>,
     engine: &Engine,
-    default_linker: &Linker<P>,
+    default_linker: &Linker<PluginContext<P>>,
     mut plugins: Vec<P>,
 ) -> LoadResult<Option<PluginInstance<P>>, I, P>
 where
@@ -152,7 +152,7 @@ where
 #[inline] fn load_exact_one<I, P>(
     socket_map: HashMap<InterfaceId, SocketState<I, P>>,
     engine: &Engine,
-    default_linker: &Linker<P>,
+    default_linker: &Linker<PluginContext<P>>,
     mut plugins: Vec<P>,
 ) -> LoadResult<PluginInstance<P>, I, P>
 where
@@ -181,7 +181,7 @@ where
 #[inline] fn load_at_least_one<I, P>(
     socket_map: HashMap<InterfaceId, SocketState<I, P>>,
     engine: &Engine,
-    default_linker: &Linker<P>,
+    default_linker: &Linker<PluginContext<P>>,
     plugins: Vec<P>,
 ) -> LoadResult<Vec<PluginInstance<P>>, I, P>
 where
@@ -211,7 +211,7 @@ where
 #[inline] fn load_any<I, P>(
     socket_map: HashMap<InterfaceId, SocketState<I, P>>,
     engine: &Engine,
-    default_linker: &Linker<P>,
+    default_linker: &Linker<PluginContext<P>>,
     plugins: Vec<P>,
 ) -> (
     HashMap<InterfaceId, SocketState<I, P>>,

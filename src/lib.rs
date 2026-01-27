@@ -12,7 +12,7 @@ pub use wasmtime::component::{ Component, Linker, Val };
 
 pub use interface::{ InterfaceId, InterfaceData, InterfaceCardinality, FunctionData, FunctionReturnType };
 pub use plugin::{ PluginId, PluginData };
-pub use loading::{ LoadError, DispatchError };
+pub use loading::{ LoadError, DispatchError, PluginContext };
 pub use plugin_tree::PluginTree ;
 pub use plugin_tree_head::PluginTreeHead ;
 pub use socket::Socket ;

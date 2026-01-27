@@ -1,22 +1,22 @@
-use std::sync::{ Arc, RwLock };
-use wasmtime::{ AsContextMut, StoreContextMut };
+use std::sync::{ Arc, Mutex };
+use wasmtime::StoreContextMut ;
 use wasmtime::component::{ Linker, ResourceType, Val };
 
 use crate::interface::{ InterfaceData, FunctionData, FunctionReturnType };
 use crate::plugin::{ PluginId, PluginData };
 use crate::socket::Socket ;
 use crate::plugin_instance::PluginInstance ;
-use super::{ LoadError, DispatchError, ResourceWrapper, ResourceCreationError };
+use super::{ LoadError, DispatchError, PluginContext, ResourceWrapper, ResourceCreationError };
 
 
 
-pub type LoadedSocket<P> = Socket<RwLock<PluginInstance<P>>> ;
+pub(super) type LoadedSocket<P> = Socket<Mutex<PluginInstance<P>>> ;
 
-#[inline] pub fn link_socket<I, P>(
-    mut linker: Linker<P>,
+#[inline] pub(super) fn link_socket<I, P>(
+    mut linker: Linker<PluginContext<P>>,
     interface: &Arc<I>,
     socket: &Arc<LoadedSocket<P>>,
-) -> Result<Linker<P>, LoadError<I, P>>
+) -> Result<Linker<PluginContext<P>>, LoadError<I, P>>
 where
     I: InterfaceData,
     P: PluginData + Send + Sync,
@@ -55,7 +55,7 @@ where
 
     match interface.get_resources() {
         Ok( resources ) => resources.into_iter().try_for_each(| resource | linker_instance
-            .resource( resource.as_str(), ResourceType::host::<Arc<ResourceWrapper>>(), ResourceWrapper::drop )
+            .resource( resource.as_str(), ResourceType::host::<Arc<ResourceWrapper>>(), ResourceWrapper::drop::<P> )
             .map_err(| err | LoadError::FailedToLink( resource.clone(), err ))
         )?,
         Err( err ) => return Err( LoadError::CorruptedInterfaceManifest( err )),
@@ -66,9 +66,9 @@ where
 }
 
 /// Dispatches a non-method function call to all plugins
-pub(crate) fn dispatch_all<P, E>(
+fn dispatch_all<P, E>(
     socket: &Arc<LoadedSocket<P>>,
-    mut ctx: StoreContextMut<P>,
+    mut ctx: StoreContextMut<PluginContext<P>>,
     interface_path: &str,
     function: &FunctionData,
     data: &[Val],
@@ -85,9 +85,9 @@ where
 }
 
 /// Dispatches a method function call, routing to the correct plugin.
-pub(crate) fn dispatch_method<P, E>(
+fn dispatch_method<P, E>(
     socket: &Arc<LoadedSocket<P>>,
-    ctx: StoreContextMut<P>,
+    ctx: StoreContextMut<PluginContext<P>>,
     interface_path: &str,
     function: &FunctionData,
     data: &[Val],
@@ -104,8 +104,8 @@ where
 }
 
 #[inline] fn dispatch_of<P, E>(
-    ctx: &mut StoreContextMut<P>,
-    plugin: &RwLock<PluginInstance<P>>,
+    ctx: &mut StoreContextMut<PluginContext<P>>,
+    plugin: &Mutex<PluginInstance<P>>,
     interface_path: &str,
     function: &FunctionData,
     data: &[Val],
@@ -115,7 +115,7 @@ where
     E: std::error::Error,
 {
 
-    let mut lock = plugin.write().map_err(|_| DispatchError::Deadlock )?;
+    let mut lock = plugin.lock().map_err(|_| DispatchError::Deadlock )?;
     let result = lock.dispatch( interface_path, function.name(), function.has_return(), data )?;
 
     Ok( match function.return_type() {
@@ -126,7 +126,7 @@ where
 
 #[inline] fn route_method<P, E>(
     socket: &LoadedSocket<P>,
-    mut ctx: StoreContextMut<P>,
+    mut ctx: StoreContextMut<PluginContext<P>>,
     interface_path: &str,
     function: &FunctionData,
     data: &[Val],
@@ -153,7 +153,7 @@ where
 
 }
 
-fn wrap_resources( val: Val, plugin_id: &PluginId, store: &mut impl AsContextMut ) -> Result<Val, ResourceCreationError> {
+fn wrap_resources<P: PluginData>( val: Val, plugin_id: &PluginId, store: &mut StoreContextMut<PluginContext<P>> ) -> Result<Val, ResourceCreationError> {
     Ok( match val {
         Val::Bool( _ )
         | Val::S8( _ ) | Val::S16( _ ) | Val::S32( _ ) | Val::S64( _ )

@@ -7,7 +7,7 @@ use wasmtime::component::{ Linker, Val };
 use crate::interface::{ InterfaceId, InterfaceData, InterfaceCardinality };
 use crate::plugin::PluginData ;
 use crate::utils::PartialResult ;
-use super::{ load_socket, SocketState, LoadedSocket };
+use super::{ load_socket, SocketState, LoadedSocket, PluginContext };
 use super::{ ResourceCreationError, ResourceReceiveError };
 
 
@@ -110,7 +110,7 @@ pub(super) struct LoadResult<T, I: InterfaceData, P: PluginData + 'static> {
 #[inline] pub(crate) fn load_plugin_tree<I, P>(
     socket_map: HashMap<InterfaceId, ( I, Vec<P> )>,
     engine: &Engine,
-    default_linker: &Linker<P>,
+    default_linker: &Linker<PluginContext<P>>,
     root: InterfaceId,
 ) -> PartialResult<( Arc<I>, Arc<LoadedSocket<P>> ), LoadError<I, P>, LoadError<I, P>>
 where

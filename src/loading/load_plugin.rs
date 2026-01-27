@@ -7,7 +7,7 @@ use crate::utils::Merge ;
 use crate::interface::{ InterfaceId, InterfaceData };
 use crate::plugin::PluginData ;
 use crate::plugin_instance::PluginInstance ;
-use super::{ LoadResult, LoadError, LoadedSocket };
+use super::{ LoadResult, LoadError, LoadedSocket, PluginContext };
 use super::load_socket::{ SocketState, load_socket };
 use super::link_socket ;
 
@@ -16,7 +16,7 @@ use super::link_socket ;
 #[inline] pub fn load_plugin<I, P>(
     socket_map: HashMap<InterfaceId, SocketState<I, P>>,
     engine: &Engine,
-    default_linker: &Linker<P>,
+    default_linker: &Linker<PluginContext<P>>,
     plugin: P,
 ) -> LoadResult<PluginInstance<P>, I, P>
 where
@@ -52,7 +52,7 @@ where
         Err( err ) => return LoadResult { socket_map, result: Err( LoadError::CorruptedPluginManifest( err )), errors },
     };
 
-    let mut store = Store::new( engine, plugin );
+    let mut store = Store::new( engine, PluginContext::new( plugin ));
     let instance = match linker.instantiate( &mut store, &component ) {
         Ok( instanace_pre ) => instanace_pre,
         Err( err ) => return LoadResult { socket_map, result: Err( LoadError::FailedToLoadComponent( err )), errors },
@@ -74,7 +74,7 @@ where
     socket_ids: impl IntoIterator<Item = &'a InterfaceId>,
     socket_map: HashMap<InterfaceId, SocketState<I, P>>,
     engine: &Engine,
-    default_linker: &Linker<P>,
+    default_linker: &Linker<PluginContext<P>>,
 ) -> LoadResult<Vec<( Arc<I>, Arc<LoadedSocket<P>> )>, I, P>
 where
     I: InterfaceData,

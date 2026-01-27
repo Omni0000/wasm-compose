@@ -6,7 +6,7 @@ use wasmtime::component::Linker ;
 use crate::interface::{ InterfaceId, InterfaceData };
 use crate::plugin::PluginData ;
 use crate::plugin_tree_head::PluginTreeHead ;
-use crate::loading::{ LoadError, load_plugin_tree };
+use crate::loading::{ LoadError, PluginContext, load_plugin_tree };
 use crate::utils::{ Merge, PartialSuccess, PartialResult };
 
 
@@ -82,7 +82,7 @@ impl<I: InterfaceData, P: PluginData> PluginTree<I, P> {
     pub fn load(
         self,
         engine: &Engine,
-        exports: &Linker<P>,
+        exports: &Linker<PluginContext<P>>,
     ) -> PartialResult<PluginTreeHead<I, P>, LoadError<I, P>, LoadError<I, P>>
     where
         P: Send + Sync,

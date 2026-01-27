@@ -1,5 +1,5 @@
 use std::collections::HashMap ;
-use std::sync::{ RwLock, RwLockReadGuard, PoisonError };
+use std::sync::{ Mutex, MutexGuard, PoisonError };
 use wasmtime::component::Val ;
 
 use crate::plugin::{ PluginId, PluginData };
@@ -46,14 +46,14 @@ impl<T> Socket<T> {
     }
 }
 
-impl<T: PluginData> Socket<RwLock<PluginInstance<T>>> {
+impl<P: PluginData> Socket<Mutex<PluginInstance<P>>> {
 
     #[allow( clippy::type_complexity )]
-    pub(crate) fn get( &self, id: &PluginId ) -> Result<Option<&RwLock<PluginInstance<T>>>,PoisonError<RwLockReadGuard<'_, PluginInstance<T>>>> {
+    pub(crate) fn get( &self, id: &PluginId ) -> Result<Option<&Mutex<PluginInstance<P>>>, PoisonError<MutexGuard<'_, PluginInstance<P>>>> {
         Ok( match self {
             Self::AtMostOne( Option::None ) => None,
             Self::AtMostOne( Some( plugin )) | Self::ExactlyOne( plugin ) => {
-                if &plugin.read()?.id == id { Some( plugin ) } else { None }
+                if &plugin.lock()?.id == id { Some( plugin ) } else { None }
             },
             Self::AtLeastOne( plugins ) | Self::Any( plugins ) => plugins.get( id ),
         })
@@ -67,7 +67,7 @@ impl<T: PluginData> Socket<RwLock<PluginInstance<T>>> {
         data: &[Val],
     ) -> Socket<Result<Val, DispatchError<IE>>> {
         self.map(| plugin | plugin
-            .write().map_err(|_| DispatchError::Deadlock )
+            .lock().map_err(|_| DispatchError::Deadlock )
             .and_then(| mut lock | lock.dispatch( interface_path, function, has_return, data ))
         )
     }
