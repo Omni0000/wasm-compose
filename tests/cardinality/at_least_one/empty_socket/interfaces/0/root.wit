@@ -1,0 +1,5 @@
+package test:root;
+
+interface root {
+  startup: func() -> u32;
+}

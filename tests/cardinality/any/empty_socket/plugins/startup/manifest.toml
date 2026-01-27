@@ -1,0 +1,3 @@
+id = "startup"
+plug = 0
+sockets = [1]

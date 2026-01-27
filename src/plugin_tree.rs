@@ -1,4 +1,4 @@
-use std::collections::HashMap ;
+use std::collections::{ HashSet, HashMap };
 use itertools::Itertools ;
 use wasmtime::Engine ;
 use wasmtime::component::Linker ;
@@ -53,18 +53,32 @@ impl<I: InterfaceData, P: PluginData> PluginTree<I, P> {
     where
         E: From<I::Error> + From<P::Error>,
     {
+        let ( sockets, socket_errors ) = plugins.iter()
+            .map(| handle | Ok( handle.get_sockets()? ))
+            .partition_result::<Vec<_>, Vec<_>, _, _>();
+        let all_sockets = std::iter::once( root_interface_id )
+            .chain( sockets.into_iter().flatten().copied() )
+            .collect::<HashSet<_>>();
+
         let ( entries, plugin_errors ) = plugins.into_iter()
             .map(| handle | Result::<_, E>::Ok(( *handle.get_plug()?, handle )))
             .partition_result::<Vec<_>, Vec<_>, _, _>();
+        let plug_group_map: HashMap<_, Vec<_>> = entries.into_iter().into_group_map();
 
-        let mut plugin_group_map = entries.into_iter().into_group_map();
-        plugin_group_map.entry( root_interface_id ).or_default();
+        let empty_sockets: Vec<_> = all_sockets.iter()
+            .filter(| id | !plug_group_map.contains_key( id ))
+            .copied()
+            .collect();
 
-        let ( socket_map, interface_errors ) = plugin_group_map.into_iter()
+        let ( socket_map, interface_errors ) = plug_group_map.into_iter()
             .map(|( id, plugins )| Ok(( id, ( I::new( id )?, plugins ))))
+            .chain( empty_sockets.into_iter().map(| id | Ok(( id, ( I::new( id )?, Vec::new() )))))
             .partition_result::<HashMap<_, _>, Vec<_>, _, _>();
 
-        ( Self { root_interface_id, socket_map }, plugin_errors.merge_all( interface_errors ) )
+        let errors = socket_errors.merge_all( plugin_errors ).merge_all( interface_errors );
+
+        ( Self { root_interface_id, socket_map }, errors )
+
     }
 
     /// Compiles and links all plugins in the tree, returning a loaded tree head.
