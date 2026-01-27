@@ -3,6 +3,8 @@ use wasm_compose::{ Engine, Linker, PluginTree, InterfaceId, PluginId };
 bind_fixtures!( "error_handling", "invalid_plugin_omitted" );
 use fixtures::{ InterfaceDir, PluginDir, FixtureError };
 
+/// Tests that even if you attempt to load an invalid plugin, the load succeeds with warnings
+/// trying to load as many plugins as possible instead of failing completely
 #[test]
 fn error_handling_test_invalid_plugin_omitted() {
 
@@ -13,6 +15,7 @@ fn error_handling_test_invalid_plugin_omitted() {
         PluginDir::new( PluginId::new( "invalid".into() )).unwrap(),
         PluginDir::new( PluginId::new( "valid".into() )).unwrap(),
     ];
+
     let ( tree, warnings ) = PluginTree::<InterfaceDir, _>::new::<FixtureError>( plugins, InterfaceId::new( 0x_00_00_00_00_u64 ));
     assert_no_warnings!( warnings );
 
@@ -20,5 +23,6 @@ fn error_handling_test_invalid_plugin_omitted() {
         warnings.into_iter().for_each(| warning | println!( "{}", warning ));
         panic!( "{}", err );
     };
+    // TODO: check only the expected plugins failed
 
 }
